@@ -1,8 +1,9 @@
 streamlit
-tensorflow
+tensorflow==2.11.0
 nltk
 contractions
 shap
 matplotlib
 scikit-learn
 joblib
+pandas
