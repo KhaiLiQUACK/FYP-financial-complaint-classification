@@ -152,7 +152,7 @@ def predict_cnn_bilstm(raw_text, model, tokenizer, label_encoder, maxlen=100):
     label = label_encoder.inverse_transform(pred_class)[0]
     # Confidence
     confidence = round(float(pred_probs.max()) * 100, 2)
-    return cleaned, label, confidence, probs, int(pred_class[0])
+    return cleaned, label, confidence, pred_probs, int(pred_class[0])
 
 # Define wrapper class for XAI
 class CNNBiLSTMWrapper:
