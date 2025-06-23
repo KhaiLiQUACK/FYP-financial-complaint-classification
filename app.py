@@ -21,20 +21,18 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import load_model
 
 # Download nltk packages with correct resource paths
-nltk_resources = {
-    "stopwords": "corpora",
-    "words": "corpora",
-    "wordnet": "corpora",
-    "omw-1.4": "corpora",
-    "averaged_perceptron_tagger": "taggers",
-    "averaged_perceptron_tagger_en": "taggers",  # <-- Add this!
-}
-
-for pkg, path in nltk_resources.items():
+nltk_packages = ["stopwords", "words", "wordnet", "omw-1.4", "averaged_perceptron_tagger"]
+for pkg in nltk_packages:
     try:
-        nltk.data.find(f"{path}/{pkg}")
+        nltk.data.find(f"corpora/{pkg}")
     except LookupError:
         nltk.download(pkg)
+
+# Taggers path is different
+try:
+    nltk.data.find("taggers/averaged_perceptron_tagger")
+except LookupError:
+    nltk.download("averaged_perceptron_tagger")
 
 # Define wrapper class for XAI
 class CNNBiLSTMWrapper:
@@ -100,7 +98,7 @@ def get_wordnet_pos(tag):
         return wordnet.NOUN
 
 def lemmatize_tokens(tokens):
-    pos_tags = pos_tag(tokens)
+    pos_tags = pos_tag(tokens, lang="eng")
     return [lemmatizer.lemmatize(token.lower(), get_wordnet_pos(tag)) for token, tag in pos_tags]
 
 def remove_stopwords(tokens):
