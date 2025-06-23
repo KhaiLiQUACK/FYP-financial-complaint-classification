@@ -181,11 +181,10 @@ def predict(text):
     confidence = round(float(probs.max()) * 100, 2)
     return cleaned, label, confidence, padded
 
-def explain_shap(input_text, padded):
-    # SHAP expects raw text if using Text masker, else feed preprocessed input
-    shap_values = explainer(padded)
+def explain_shap(raw_text):
+    shap_values = explainer([raw_text])  # Must be list of strings
     fig, ax = plt.subplots(figsize=(10, 4))
-    shap.plots.waterfall(shap_values[0], show=False)
+    shap.plots.text(shap_values[0], show=False)
     st.pyplot(fig)
 
 # --- Streamlit App ---
@@ -205,6 +204,6 @@ if st.button("Classify & Explain") and input_text.strip():
     st.markdown(f"**Confidence:** `{confidence}%`")
 
     st.subheader("🔍 SHAP Word Importance (Waterfall Plot):")
-    explain_shap(input_text, padded)
+    explain_shap(input_text)
 else:
     st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
