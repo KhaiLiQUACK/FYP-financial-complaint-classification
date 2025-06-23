@@ -28,6 +28,19 @@ for pkg in nltk_packages:
     except LookupError:
         nltk.download(pkg)
 
+# Define wrapper class for XAI
+class CNNBiLSTMWrapper:
+    def __init__(self, model, tokenizer, maxlen=100):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.maxlen = maxlen
+
+    def __call__(self, texts):
+        cleaned_texts = [clean_text(t) for t in texts]
+        sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
+        padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
+        return self.model.predict(padded)
+
 # Load best_model, label encoder, tokenizer & shap_explainer
 model = load_model("CNN_BiLSTM_Seq.keras")
 with open('label_encoder.pkl', 'rb') as f:
@@ -160,18 +173,6 @@ def predict(text):
     label = label_encoder.inverse_transform(pred_class)[0]
     confidence = round(float(probs.max()) * 100, 2)
     return cleaned, label, confidence, padded
-
-class CNNBiLSTMWrapper:
-    def __init__(self, model, tokenizer, maxlen=100):
-        self.model = model
-        self.tokenizer = tokenizer
-        self.maxlen = maxlen
-
-    def __call__(self, texts):
-        cleaned_texts = [clean_text(t) for t in texts]
-        sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
-        padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
-        return self.model.predict(padded)
 
 def explain_shap(input_text, padded):
     # SHAP expects raw text if using Text masker, else feed preprocessed input
