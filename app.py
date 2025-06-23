@@ -150,21 +150,9 @@ def predict_cnn_bilstm(raw_text, model, tokenizer, label_encoder, maxlen=100):
     pred_class = pred_probs.argmax(axis=1)
     # Decode label
     label = label_encoder.inverse_transform(pred_class)[0]
-    return {
-        "input_cleaned": cleaned,
-        "predicted_label": label,
-        "confidence": round(float(pred_probs.max()) * 100, 2)
-    }
-
-def predict(text):
-    cleaned = clean_text(text)
-    seq = tokenizer.texts_to_sequences([cleaned])
-    padded = pad_sequences(seq, maxlen=100, padding='post')
-    probs = model.predict(padded)
-    pred_class = probs.argmax(axis=1)
-    label = label_encoder.inverse_transform(pred_class)[0]
-    confidence = round(float(probs.max()) * 100, 2)
-    return cleaned, label, confidence, padded
+    # Confidence
+    confidence = round(float(pred_probs.max()) * 100, 2)
+    return cleaned, label, confidence, probs, int(pred_class[0])
 
 # Define wrapper class for XAI
 class CNNBiLSTMWrapper:
@@ -199,7 +187,9 @@ st.markdown("""Enter your complaint below to predict its category and explain wh
 input_text = st.text_area("Enter Complaint Text:", height=200)
 
 if st.button("Classify & Explain") and input_text.strip():
-    cleaned, label, confidence, padded = predict(input_text)
+    cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
+        input_text, model, tokenizer, label_encoder
+    )
     st.subheader("📌 Cleaned Input:")
     st.code(cleaned)
 
