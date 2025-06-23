@@ -20,15 +20,15 @@ from nltk import pos_tag
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import load_model
 
-# Download nltk packages with correct resource paths
-nltk_packages = ["stopwords", "words", "wordnet", "omw-1.4", "averaged_perceptron_tagger"]
-for pkg in nltk_packages:
+# Download NLTK corpora
+corpora_packages = ["stopwords", "words", "wordnet", "omw-1.4"]
+for pkg in corpora_packages:
     try:
         nltk.data.find(f"corpora/{pkg}")
     except LookupError:
         nltk.download(pkg)
 
-# Taggers path is different
+# Download tagger
 try:
     nltk.data.find("taggers/averaged_perceptron_tagger")
 except LookupError:
