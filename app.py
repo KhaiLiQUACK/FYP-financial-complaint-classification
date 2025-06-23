@@ -98,7 +98,7 @@ def get_wordnet_pos(tag):
         return wordnet.NOUN
 
 def lemmatize_tokens(tokens):
-    pos_tags = pos_tag(tokens, lang="eng")
+    pos_tags = pos_tag(tokens)
     return [lemmatizer.lemmatize(token.lower(), get_wordnet_pos(tag)) for token, tag in pos_tags]
 
 def remove_stopwords(tokens):
