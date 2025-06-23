@@ -21,17 +21,18 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import load_model
 
 # Download nltk packages with correct resource paths
-nltk_packages = {
+nltk_resources = {
     "stopwords": "corpora",
     "words": "corpora",
     "wordnet": "corpora",
+    "omw-1.4": "corpora",
     "averaged_perceptron_tagger": "taggers",
-    "omw-1.4": "corpora",  # Optional but useful for lemmatizer
+    "averaged_perceptron_tagger_en": "taggers",  # <-- Add this!
 }
 
-for pkg, resource_type in nltk_packages.items():
+for pkg, path in nltk_resources.items():
     try:
-        nltk.data.find(f"{resource_type}/{pkg}")
+        nltk.data.find(f"{path}/{pkg}")
     except LookupError:
         nltk.download(pkg)
 
