@@ -161,6 +161,18 @@ def predict(text):
     confidence = round(float(probs.max()) * 100, 2)
     return cleaned, label, confidence, padded
 
+class CNNBiLSTMWrapper:
+    def __init__(self, model, tokenizer, maxlen=100):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.maxlen = maxlen
+
+    def __call__(self, texts):
+        cleaned_texts = [clean_text(t) for t in texts]
+        sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
+        padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
+        return self.model.predict(padded)
+
 def explain_shap(input_text, padded):
     # SHAP expects raw text if using Text masker, else feed preprocessed input
     shap_values = explainer(padded)
