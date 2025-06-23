@@ -29,7 +29,7 @@ for pkg in nltk_packages:
         nltk.download(pkg)
 
 # Load best_model, label encoder, tokenizer & shap_explainer
-model = load_model("CNN_BiLSTM_Seq.h5")
+model = load_model("CNN_BiLSTM_Seq.keras")
 with open('label_encoder.pkl', 'rb') as f:
     label_encoder = pickle.load(f)
 with open("tokenizer.pkl", "rb") as f:
