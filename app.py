@@ -35,27 +35,12 @@ except LookupError:
     nltk.download("averaged_perceptron_tagger")
     nltk.download('averaged_perceptron_tagger_eng')
 
-# Define wrapper class for XAI
-class CNNBiLSTMWrapper:
-    def __init__(self, model, tokenizer, maxlen=100):
-        self.model = model
-        self.tokenizer = tokenizer
-        self.maxlen = maxlen
-
-    def __call__(self, texts):
-        cleaned_texts = [clean_text(t) for t in texts]
-        sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
-        padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
-        return self.model.predict(padded)
-
-# Load best_model, label encoder, tokenizer & shap_explainer
+# Load best_model, label encoder & tokenizer
 model = load_model("CNN_BiLSTM_Seq.keras")
 with open('label_encoder.pkl', 'rb') as f:
     label_encoder = pickle.load(f)
 with open("tokenizer.pkl", "rb") as f:
     tokenizer = pickle.load(f)
-with open("shap_explainer.pkl", "rb") as f:
-    explainer = pickle.load(f)
 
 # Define function to recreate text cleaning pipeline in EDA
 stop_words = set(stopwords.words('english'))
@@ -181,10 +166,29 @@ def predict(text):
     confidence = round(float(probs.max()) * 100, 2)
     return cleaned, label, confidence, padded
 
-def explain_shap(raw_text):
-    shap_values = explainer([raw_text])  # Must be list of strings
+# Define wrapper class for XAI
+class CNNBiLSTMWrapper:
+    def __init__(self, model, tokenizer, maxlen=100):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.maxlen = maxlen
+
+    def __call__(self, texts):
+        cleaned_texts = [clean_text(t) for t in texts]
+        sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
+        padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
+        return self.model.predict(padded)
+
+# Create SHAP explainer
+wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
+regex_masker = shap.maskers.Text(r"\w+")
+explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
+
+# SHAP explanation
+def explain_shap(raw_text, predicted_class):
+    shap_values = explainer([raw_text])
     fig, ax = plt.subplots(figsize=(10, 4))
-    shap.plots.text(shap_values[0], show=False)
+    shap.plots.waterfall(shap_values[0][:, predicted_class], show=False)
     st.pyplot(fig)
 
 # --- Streamlit App ---
@@ -204,6 +208,6 @@ if st.button("Classify & Explain") and input_text.strip():
     st.markdown(f"**Confidence:** `{confidence}%`")
 
     st.subheader("🔍 SHAP Word Importance (Waterfall Plot):")
-    explain_shap(input_text)
+    explain_shap(input_text, predicted_class)
 else:
     st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
