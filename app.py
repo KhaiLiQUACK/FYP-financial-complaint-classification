@@ -214,59 +214,59 @@ st.markdown("""Enter your complaint below to predict its category and explain wh
 
 input_text = st.text_area("Enter Complaint Text:", height=200)
 
-# if st.button("Classify & Explain") and input_text.strip():
-#     cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
-#         input_text, model, tokenizer, label_encoder
-#     )
-#     st.subheader("📌 Cleaned Input:")
-#     st.code(cleaned)
-
-#     st.subheader("📊 Prediction Result:")
-#     st.markdown(f"**Predicted Category:** `{label}`")
-#     st.markdown(f"**Confidence:** `{confidence}%`")
-
-#     st.markdown(f"### 🔍 SHAP Word Importance Explanation for Predicted Class: **{label}**")
-#     explain_shap(input_text, predicted_class)
-#     with st.expander("ℹ️ How to interpret this plot"):
-#         st.markdown("""
-#         - **Base value** is the average model output.
-#         - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
-#         - The plot explains why the model predicted the selected class.
-#         """)
-
 if st.button("Classify & Explain") and input_text.strip():
     cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
         input_text, model, tokenizer, label_encoder
     )
-
-    st.session_state["input_text"] = input_text
-    st.session_state["cleaned"] = cleaned
-    st.session_state["label"] = label
-    st.session_state["confidence"] = confidence
-    st.session_state["pred_probs"] = pred_probs
-    st.session_state["predicted_class"] = predicted_class
-    st.session_state["shap_values"] = explainer([input_text])
-
-if "shap_values" in st.session_state:
     st.subheader("📌 Cleaned Input:")
-    st.code(st.session_state["cleaned"])
+    st.code(cleaned)
 
     st.subheader("📊 Prediction Result:")
-    st.markdown(f"**Predicted Category:** `{st.session_state['label']}`")
-    st.markdown(f"**Confidence:** `{st.session_state['confidence']}%`")
+    st.markdown(f"**Predicted Category:** `{label}`")
+    st.markdown(f"**Confidence:** `{confidence}%`")
 
-    # Explain with SHAP
-    explain_shap(
-        st.session_state["input_text"],
-        st.session_state["predicted_class"]
-    )
-
+    st.markdown(f"### 🔍 SHAP Word Importance Explanation for Predicted Class: **{label}**")
+    explain_shap(input_text, predicted_class)
     with st.expander("ℹ️ How to interpret this plot"):
         st.markdown("""
         - **Base value** is the average model output.
         - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
         - The plot explains why the model predicted the selected class.
         """)
+
+# if st.button("Classify & Explain") and input_text.strip():
+#     cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
+#         input_text, model, tokenizer, label_encoder
+#     )
+
+#     st.session_state["input_text"] = input_text
+#     st.session_state["cleaned"] = cleaned
+#     st.session_state["label"] = label
+#     st.session_state["confidence"] = confidence
+#     st.session_state["pred_probs"] = pred_probs
+#     st.session_state["predicted_class"] = predicted_class
+#     st.session_state["shap_values"] = explainer([input_text])
+
+# if "shap_values" in st.session_state:
+#     st.subheader("📌 Cleaned Input:")
+#     st.code(st.session_state["cleaned"])
+
+#     st.subheader("📊 Prediction Result:")
+#     st.markdown(f"**Predicted Category:** `{st.session_state['label']}`")
+#     st.markdown(f"**Confidence:** `{st.session_state['confidence']}%`")
+
+#     # Explain with SHAP
+#     explain_shap(
+#         st.session_state["input_text"],
+#         st.session_state["predicted_class"]
+#     )
+
+#     with st.expander("ℹ️ How to interpret this plot"):
+#         st.markdown("""
+#         - **Base value** is the average model output.
+#         - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
+#         - The plot explains why the model predicted the selected class.
+#         """)
 
 else:
     st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
