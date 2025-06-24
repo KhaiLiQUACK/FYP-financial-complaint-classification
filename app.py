@@ -184,98 +184,23 @@ st.set_page_config(page_title="Complaint Classifier", layout="centered")
 st.title("📨 Financial Complaint Issue Classifier")
 st.markdown("""Enter your complaint below to predict its category and explain why the model made the prediction using SHAP.""")
 
-# input_text = st.text_area("Enter Complaint Text:", height=200)
+input_text = st.text_area("Enter Complaint Text:", height=200)
 
-# if st.button("Classify & Explain") and input_text.strip():
-#     cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
-#         input_text, model, tokenizer, label_encoder
-#     )
-#     st.subheader("📌 Cleaned Input:")
-#     st.code(cleaned)
+if st.button("Classify & Explain") and input_text.strip():
+    cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
+        input_text, model, tokenizer, label_encoder
+    )
+    st.subheader("📌 Cleaned Input:")
+    st.code(cleaned)
 
-#     st.subheader("📊 Prediction Result:")
-#     st.markdown(f"**Predicted Category:** `{label}`")
-#     st.markdown(f"**Confidence:** `{confidence}%`")
+    st.subheader("📊 Prediction Result:")
+    st.markdown(f"**Predicted Category:** `{label}`")
+    st.markdown(f"**Confidence:** `{confidence}%`")
 
-#     st.subheader("🔍 SHAP Word Importance (Waterfall Plot):")
-#     explain_shap(input_text, predicted_class)
-# else:
-#     st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
+    st.subheader("🔍 SHAP Word Importance (Waterfall Plot):")
+    explain_shap(input_text, predicted_class)
+else:
+    st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
 
 
-tab1, tab2, tab3 = st.tabs(["🔍 Prediction", "📊 Explanation", "✨ Highlighting"])
 
-with tab1:
-    raw_text = st.text_area("Enter your financial complaint:")
-
-    if st.button("Predict") and raw_text.strip():
-        cleaned = clean_text(raw_text)
-        seq = tokenizer.texts_to_sequences([cleaned])
-        padded = pad_sequences(seq, maxlen=100, padding='post')
-
-        pred_probs = model.predict(padded)
-        pred_class_idx = np.argmax(pred_probs)
-        predicted_class = label_encoder.inverse_transform([pred_class_idx])[0]
-
-        st.success(f"Predicted Class: **{predicted_class}**")
-
-        st.session_state["input"] = raw_text
-        st.session_state["cleaned"] = cleaned
-        st.session_state["padded"] = padded
-        st.session_state["pred_probs"] = pred_probs
-        st.session_state["pred_class_idx"] = pred_class_idx
-        st.session_state["shap_values"] = explainer(padded)
-
-with tab2:
-    if "shap_values" in st.session_state:
-        shap_values = st.session_state["shap_values"]
-        pred_probs = st.session_state["pred_probs"]
-        pred_class_idx = st.session_state["pred_class_idx"]
-
-        col1, col2 = st.columns([2, 1])
-
-        with col1:
-            class_names = label_encoder.classes_
-            selected_class = st.selectbox("Select class to explain:", options=class_names, index=pred_class_idx)
-            selected_class_idx = list(class_names).index(selected_class)
-
-            max_features = st.slider("Top N impactful features:", 5, len(shap_values[selected_class_idx].values), 20)
-            st.markdown(f"### SHAP Waterfall Plot: **{selected_class}**")
-            shap.plots.waterfall(shap_values[selected_class_idx], max_display=max_features)
-
-        with col2:
-            probs_df = pd.DataFrame({
-                'Class': label_encoder.inverse_transform(np.arange(len(pred_probs[0]))),
-                'Probability': pred_probs.flatten()
-            }).sort_values("Probability", ascending=True)
-
-            fig = px.bar(
-                probs_df,
-                x="Probability",
-                y="Class",
-                orientation='h',
-                title="🎯 Class Probabilities",
-                labels={"Probability": "Predicted Probability", "Class": "Class"},
-                text=probs_df["Probability"].apply(lambda x: f"{x:.2%}"),
-                color="Probability",
-                color_continuous_scale='Blues'
-            )
-            fig.update_layout(yaxis=dict(title=''), xaxis=dict(tickformat='.0%'))
-            st.plotly_chart(fig, use_container_width=True)
-
-with tab3:
-    if "shap_values" in st.session_state:
-        st.markdown("### ✨ Word-Level SHAP Impact")
-        highlighted_html = generate_shap_highlight(
-            st.session_state["cleaned"], 
-            st.session_state["shap_values"][st.session_state["pred_class_idx"]], 
-            tokenizer
-        )
-        st.markdown(highlighted_html, unsafe_allow_html=True)
-
-        with st.expander("ℹ️ What do the colors mean?"):
-            st.markdown("""
-            - **Red**: increases the chance of the predicted class  
-            - **Blue**: decreases the chance  
-            - More intense = stronger impact
-            """)
