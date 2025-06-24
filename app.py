@@ -173,12 +173,39 @@ regex_masker = shap.maskers.Text(r"\w+")
 explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
 
 # SHAP explanation
+# def explain_shap(raw_text, predicted_class):
+#     shap_values = explainer([raw_text])
+#     fig, ax = plt.subplots(figsize=(10, 4))
+#     # shap.plots.waterfall(shap_values[0][:, predicted_class], show=False)
+#     shap.plots.waterfall(shap_values[0], max_display=len(shap_values[0].values))
+#     st.pyplot(fig)
+
 def explain_shap(raw_text, predicted_class):
+    # Get SHAP values for the input
     shap_values = explainer([raw_text])
+
+    # Select class to explain
+    class_names = label_encoder.classes_
+    selected_class_name = st.selectbox("Select class to explain:", class_names, index=predicted_class)
+    selected_class_idx = list(class_names).index(selected_class_name)
+
+    # Extract explanation for selected class
+    values = shap_values[0].values[:, selected_class_idx]
+    base_value = shap_values[0].base_values[selected_class_idx]
+    data = shap_values[0].data
+
+    explanation = shap.Explanation(
+        values=values,
+        base_values=base_value,
+        data=data,
+        feature_names=shap_values[0].feature_names
+    )
+
+    st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
     fig, ax = plt.subplots(figsize=(10, 4))
-    # shap.plots.waterfall(shap_values[0][:, predicted_class], show=False)
-    shap.plots.waterfall(shap_values[0], max_display=len(shap_values[0].values))
+    shap.plots.waterfall(explanation, max_display=len(values), show=False)
     st.pyplot(fig)
+
 
 # --- Streamlit App ---
 st.set_page_config(page_title="Complaint Classifier", layout="centered")
