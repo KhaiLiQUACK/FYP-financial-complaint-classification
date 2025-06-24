@@ -201,11 +201,11 @@ if st.button("Classify & Explain") and input_text.strip():
     st.markdown(f"### 🔍 SHAP Word Importance Explanation for Predicted Class: **{predicted_class}**")
     explain_shap(input_text, predicted_class)
     with st.expander("ℹ️ How to interpret this plot"):
-    st.markdown("""
-    - **Base value** is the average model output.
-    - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
-    - The plot explains why the model predicted the selected class.
-    """)
+        st.markdown("""
+        - **Base value** is the average model output.
+        - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
+        - The plot explains why the model predicted the selected class.
+        """)
 else:
     st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
 
