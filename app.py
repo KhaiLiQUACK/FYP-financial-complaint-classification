@@ -198,7 +198,7 @@ if st.button("Classify & Explain") and input_text.strip():
     st.markdown(f"**Predicted Category:** `{label}`")
     st.markdown(f"**Confidence:** `{confidence}%`")
 
-    st.markdown(f"### 🔍 SHAP Word Importance Explanation for Predicted Class: **{predicted_class}**")
+    st.markdown(f"### 🔍 SHAP Word Importance Explanation for Predicted Class: **{label}**")
     explain_shap(input_text, predicted_class)
     with st.expander("ℹ️ How to interpret this plot"):
         st.markdown("""
