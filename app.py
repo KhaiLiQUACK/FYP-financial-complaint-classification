@@ -172,14 +172,6 @@ wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
 regex_masker = shap.maskers.Text(r"\w+")
 explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
 
-# SHAP explanation
-# def explain_shap(raw_text, predicted_class):
-#     shap_values = explainer([raw_text])
-#     fig, ax = plt.subplots(figsize=(10, 4))
-#     # shap.plots.waterfall(shap_values[0][:, predicted_class], show=False)
-#     shap.plots.waterfall(shap_values[0], max_display=len(shap_values[0].values))
-#     st.pyplot(fig)
-
 def explain_shap(raw_text, predicted_class):
     # Get SHAP values for the input
     shap_values = explainer([raw_text])
@@ -214,59 +206,81 @@ st.markdown("""Enter your complaint below to predict its category and explain wh
 
 input_text = st.text_area("Enter Complaint Text:", height=200)
 
-if st.button("Classify & Explain") and input_text.strip():
-    cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
-        input_text, model, tokenizer, label_encoder
-    )
-    st.subheader("📌 Cleaned Input:")
-    st.code(cleaned)
-
-    st.subheader("📊 Prediction Result:")
-    st.markdown(f"**Predicted Category:** `{label}`")
-    st.markdown(f"**Confidence:** `{confidence}%`")
-
-    st.markdown(f"### 🔍 SHAP Word Importance Explanation for Predicted Class: **{label}**")
-    explain_shap(input_text, predicted_class)
-    with st.expander("ℹ️ How to interpret this plot"):
-        st.markdown("""
-        - **Base value** is the average model output.
-        - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
-        - The plot explains why the model predicted the selected class.
-        """)
-
 # if st.button("Classify & Explain") and input_text.strip():
 #     cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
 #         input_text, model, tokenizer, label_encoder
 #     )
-
-#     st.session_state["input_text"] = input_text
-#     st.session_state["cleaned"] = cleaned
-#     st.session_state["label"] = label
-#     st.session_state["confidence"] = confidence
-#     st.session_state["pred_probs"] = pred_probs
-#     st.session_state["predicted_class"] = predicted_class
-#     st.session_state["shap_values"] = explainer([input_text])
-
-# if "shap_values" in st.session_state:
 #     st.subheader("📌 Cleaned Input:")
-#     st.code(st.session_state["cleaned"])
+#     st.code(cleaned)
 
 #     st.subheader("📊 Prediction Result:")
-#     st.markdown(f"**Predicted Category:** `{st.session_state['label']}`")
-#     st.markdown(f"**Confidence:** `{st.session_state['confidence']}%`")
+#     st.markdown(f"**Predicted Category:** `{label}`")
+#     st.markdown(f"**Confidence:** `{confidence}%`")
 
-#     # Explain with SHAP
-#     explain_shap(
-#         st.session_state["input_text"],
-#         st.session_state["predicted_class"]
-#     )
-
+#     st.markdown(f"### 🔍 SHAP Word Importance Explanation for Predicted Class: **{label}**")
+#     explain_shap(input_text, predicted_class)
 #     with st.expander("ℹ️ How to interpret this plot"):
 #         st.markdown("""
 #         - **Base value** is the average model output.
 #         - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
 #         - The plot explains why the model predicted the selected class.
 #         """)
+
+# Button to classify and explain
+if st.button("Classify & Explain") and input_text.strip():
+    # Predict
+    cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
+        input_text, model, tokenizer, label_encoder
+    )
+
+    # Cache all info in session_state to avoid recomputation
+    st.session_state["input_text"] = input_text
+    st.session_state["cleaned"] = cleaned
+    st.session_state["label"] = label
+    st.session_state["confidence"] = confidence
+    st.session_state["predicted_class"] = predicted_class
+    st.session_state["shap_values"] = explainer([input_text])
+
+# If prediction already exists (cached)
+if "shap_values" in st.session_state:
+    st.subheader("📌 Cleaned Input:")
+    st.code(st.session_state["cleaned"])
+
+    st.subheader("📊 Prediction Result:")
+    st.markdown(f"**Predicted Category:** `{st.session_state['label']}`")
+    st.markdown(f"**Confidence:** `{st.session_state['confidence']}%`")
+
+    # Dropdown for SHAP class selection
+    class_names = label_encoder.classes_
+    selected_class_name = st.selectbox("Select class to explain:", class_names, index=st.session_state["predicted_class"])
+    selected_class_idx = list(class_names).index(selected_class_name)
+
+    # Extract SHAP explanation
+    shap_obj = st.session_state["shap_values"][0]
+    values = shap_obj.values[:, selected_class_idx]
+    base_value = shap_obj.base_values[selected_class_idx]
+    data = shap_obj.data
+
+    explanation = shap.Explanation(
+        values=values,
+        base_values=base_value,
+        data=data,
+        feature_names=shap_obj.feature_names
+    )
+
+    # SHAP Plot
+    st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
+    fig, ax = plt.subplots(figsize=(10, 4))
+    shap.plots.waterfall(explanation, max_display=len(values), show=False)
+    st.pyplot(fig)
+
+    # Help section
+    with st.expander("ℹ️ How to interpret this plot"):
+        st.markdown("""
+        - **Base value** is the average model output.
+        - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
+        - The plot explains why the model predicted the selected class.
+        """)
 
 else:
     st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
