@@ -176,7 +176,8 @@ explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=labe
 def explain_shap(raw_text, predicted_class):
     shap_values = explainer([raw_text])
     fig, ax = plt.subplots(figsize=(10, 4))
-    shap.plots.waterfall(shap_values[0][:, predicted_class], show=False)
+    # shap.plots.waterfall(shap_values[0][:, predicted_class], show=False)
+    shap.plots.waterfall(shap_values[0], max_display=len(shap_values[0].values))
     st.pyplot(fig)
 
 # --- Streamlit App ---
@@ -197,8 +198,14 @@ if st.button("Classify & Explain") and input_text.strip():
     st.markdown(f"**Predicted Category:** `{label}`")
     st.markdown(f"**Confidence:** `{confidence}%`")
 
-    st.subheader("🔍 SHAP Word Importance (Waterfall Plot):")
+    st.markdown(f"### 🔍 SHAP Word Importance Explanation for Predicted Class: **{predicted_class}**")
     explain_shap(input_text, predicted_class)
+    with st.expander("ℹ️ How to interpret this plot"):
+    st.markdown("""
+    - **Base value** is the average model output.
+    - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
+    - The plot explains why the model predicted the selected class.
+    """)
 else:
     st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
 
