@@ -172,6 +172,29 @@ wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
 regex_masker = shap.maskers.Text(r"\w+")
 explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
 
+def visualize_token_contributions(shap_values, predicted_class):
+    values = shap_values[0].values[:, predicted_class]
+    words = shap_values[0].data
+    html = ""
+    max_val = np.abs(values).max()
+
+    for word, val in zip(words, values):
+        if max_val != 0:
+            opacity = abs(val / max_val)
+        else:
+            opacity = 0
+
+        if val > 0:
+            color = f"rgba(255, 0, 0, {opacity:.2f})"  # Red for positive
+        elif val < 0:
+            color = f"rgba(0, 0, 255, {opacity:.2f})"  # Blue for negative
+        else:
+            color = "rgba(255, 255, 255, 0.0)"         # Transparent for 0
+
+        html += f'<span style="background-color:{color}; padding:3px; margin:1px; border-radius:5px;">{word}</span> '
+
+    return html
+
 def explain_shap(raw_text, predicted_class):
     # Get SHAP values for the input
     shap_values = explainer([raw_text])
@@ -193,6 +216,12 @@ def explain_shap(raw_text, predicted_class):
         feature_names=shap_values[0].feature_names
     )
 
+    # Token-level heatmap (LIME-style)
+    st.markdown("### 🔠 Token-level SHAP Contribution Highlight")
+    html_output = visualize_token_contributions(shap_values, selected_class_idx)
+    st.markdown(html_output, unsafe_allow_html=True)
+
+    # Waterfall Plot for Word Importance
     st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
     fig, ax = plt.subplots(figsize=(10, 4))
     shap.plots.waterfall(explanation, max_display=len(values), show=False)
