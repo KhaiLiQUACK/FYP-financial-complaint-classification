@@ -290,6 +290,7 @@ if st.button("Classify & Explain") and input_text.strip():
     st.session_state["label"] = label
     st.session_state["confidence"] = confidence
     st.session_state["predicted_class"] = predicted_class
+    st.session_state["pred_probs"] = pred_probs 
 
 if "label" in st.session_state:
     st.subheader("📌 Cleaned Input:")
@@ -301,16 +302,24 @@ if "label" in st.session_state:
 
     # Class Probability Plot
     st.subheader("\U0001F4CA Class Probabilities:")
-    prob_df = pd.DataFrame({
-        "Category": label_encoder.classes_,
-        "Probability": st.session_state["shap_values"].data[0].tolist() if "shap_values" in st.session_state else st.session_state["pred_probs"][0].tolist()
-    })
-    fig_prob, ax_prob = plt.subplots()
-    prob_df = prob_df.sort_values("Probability", ascending=True)
-    ax_prob.barh(prob_df["Category"], prob_df["Probability"], color="skyblue")
-    ax_prob.set_xlabel("Probability")
-    ax_prob.set_title("Class Probabilities")
-    st.pyplot(fig_prob)
+    probs = st.session_state["pred_probs"][0]  # This is a 1D array of probabilities
+    class_names = label_encoder.classes_
+    
+    # Create DataFrame only if lengths match
+    if len(class_names) == len(probs):
+        prob_df = pd.DataFrame({
+            "Category": class_names,
+            "Probability": probs
+        })
+        prob_df = prob_df.sort_values("Probability", ascending=True)
+        
+        fig_prob, ax_prob = plt.subplots()
+        ax_prob.barh(prob_df["Category"], prob_df["Probability"], color="skyblue")
+        ax_prob.set_xlabel("Probability")
+        ax_prob.set_title("Class Probabilities")
+        st.pyplot(fig_prob)
+    else:
+        st.warning("Mismatch between class labels and predicted probabilities.")
 
 if "label" in st.session_state and st.button("📈 Show SHAP Explanation"):
     shap_values = explainer([st.session_state["input_text"]])
