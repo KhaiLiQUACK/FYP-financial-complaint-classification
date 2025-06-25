@@ -180,11 +180,24 @@ class CNNBiLSTMWrapper:
         self.tokenizer = tokenizer
         self.maxlen = maxlen
 
+    # def __call__(self, texts):
+    #     cleaned_texts = [clean_text(t) for t in texts]
+    #     sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
+    #     padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
+    #     return self.model.predict(padded)
+
     def __call__(self, texts):
-        cleaned_texts = [clean_text(t) for t in texts]
-        sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
-        padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
-        return self.model.predict(padded)
+        sequences = []
+        for text in texts:
+            # Ensure final token is preserved
+            if text and text[-1] not in string.whitespace + string.punctuation:
+                text += ' '
+    
+            cleaned = clean_text(text)
+            seq = self.tokenizer.texts_to_sequences([cleaned])
+            padded = pad_sequences(seq, maxlen=self.maxlen, padding='post')
+            sequences.append(padded[0])
+        return self.model.predict(np.array(sequences))
 
     # def __call__(self, texts):
     #     # SHAP passes original raw text here
