@@ -310,7 +310,8 @@ if "label" in st.session_state:
     if len(class_names) == len(probs):
         prob_df = pd.DataFrame({
             "Category": class_names,
-            "Probability": probs
+            # "Probability": probs
+            "Probability": (np.array(probs) * 100).tolist()
         })
         prob_df = prob_df.sort_values("Probability", ascending=True)
         
@@ -327,14 +328,16 @@ if "label" in st.session_state:
         for bar in bars:
             width = bar.get_width()
             ax.text(width + 0.01, bar.get_y() + bar.get_height()/2,
-                    f"{width:.2f}", va='center', fontsize=12)
+                    f"{width:.2f}%", va='center', fontsize=12)
         
         # Style the plot to look like SHAP
         ax.set_xlim(0, 1.0)
-        ax.set_xlabel("Probability")
+        ax.set_xlabel("Probability (%)", fontsize=12)
         ax.set_title("Class Probabilities", fontsize=16)
         ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0))
         ax.grid(axis='x', linestyle='--', alpha=0.4)
+        ax.tick_params(axis='x', labelsize=12)  # X-axis ticks
+        ax.tick_params(axis='y', labelsize=12)  # Y-axis ticks
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['left'].set_visible(False)
