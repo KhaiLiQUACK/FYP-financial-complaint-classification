@@ -136,6 +136,9 @@ def clean_text(text):
     # Remove redundant words
     text = re.sub(r'\b(\w+)( \1)+\b', r'\1', text)
 
+    if text and text[-1].isalnum():
+        text += "."
+
     # 3. Tokenize using NLTK
     pattern = r"[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*|[.,!?;'\-\"()[]]"
     tokens = regexp_tokenize(text, pattern)
@@ -180,8 +183,7 @@ class CNNBiLSTMWrapper:
         padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
         return self.model.predict(padded)
 
-# Create SHAP explainer
-# Lazy SHAP initialization (avoid repeated load)
+# Create & Cache SHAP explainer (avoid repeated load)
 if "explainer" not in st.session_state:
     with st.spinner("Loading SHAP explainer..."):
         wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
@@ -291,6 +293,7 @@ if st.button("Classify & Explain") and input_text.strip():
     st.session_state["predicted_class"] = predicted_class
     st.session_state["shap_values"] = explainer([input_text])
 
+if "label" in st.session_state:
     st.subheader("📌 Cleaned Input:")
     st.code(st.session_state["cleaned"])
 
