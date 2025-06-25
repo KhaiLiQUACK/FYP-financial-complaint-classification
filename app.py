@@ -360,9 +360,9 @@ if "shap_values" in st.session_state:
 
     # SHAP Waterfall Word Importance Plot
     st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
-    top_n = st.slider("Select number of top features to show in waterfall plot:", min_value=5, max_value=len(values), value=10)
+    top_n = st.slider("Select number of top features to show in waterfall plot:", min_value=5, max_value=len(values), value=5)
     fig, ax = plt.subplots(figsize=(10, 4))
-    shap.plots.waterfall(explanation, max_display=len(values), show=False)
+    shap.plots.waterfall(explanation, max_display=top_n, show=False)
     st.pyplot(fig)
 
     # Help section
