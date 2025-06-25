@@ -152,12 +152,6 @@ def clean_text(text):
 
     return ' '.join(tokens)
 
-    # # Ensure SHAP captures last token
-    # if text and text[-1].isalnum():
-    #     text += " "
-
-    # return text
-
 # Define predict function for best model
 def predict_cnn_bilstm(raw_text, model, tokenizer, label_encoder, maxlen=100):
     # Clean the raw complaint text
@@ -181,24 +175,24 @@ class CNNBiLSTMWrapper:
         self.tokenizer = tokenizer
         self.maxlen = maxlen
 
-    # def __call__(self, texts):
-    #     cleaned_texts = [clean_text(t) for t in texts]
-    #     sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
-    #     padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
-    #     return self.model.predict(padded)
-
     def __call__(self, texts):
-        sequences = []
-        for text in texts:
-            # Ensure final token is preserved
-            if text and text[-1] not in string.whitespace + string.punctuation:
-                text += ' '
+        cleaned_texts = [clean_text(t) for t in texts]
+        sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
+        padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
+        return self.model.predict(padded)
+
+    # def __call__(self, texts):
+    #     sequences = []
+    #     for text in texts:
+    #         # Ensure final token is preserved
+    #         if text and text[-1] not in string.whitespace + string.punctuation:
+    #             text += ' '
     
-            cleaned = clean_text(text)
-            seq = self.tokenizer.texts_to_sequences([cleaned])
-            padded = pad_sequences(seq, maxlen=self.maxlen, padding='post')
-            sequences.append(padded[0])
-        return self.model.predict(np.array(sequences))
+    #         cleaned = clean_text(text)
+    #         seq = self.tokenizer.texts_to_sequences([cleaned])
+    #         padded = pad_sequences(seq, maxlen=self.maxlen, padding='post')
+    #         sequences.append(padded[0])
+    #     return self.model.predict(np.array(sequences))
 
     # def __call__(self, texts):
     #     # SHAP passes original raw text here
@@ -215,7 +209,8 @@ if "explainer" not in st.session_state:
     with st.spinner("Loading SHAP explainer..."):
         wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
         # regex_masker = shap.maskers.Text(r"\w+")
-        regex_masker = shap.maskers.Text(r"\w+|[^\w\s]")
+        # regex_masker = shap.maskers.Text(r"\w+|[^\w\s]")
+        regex_masker = shap.maskers.Text(r"\w+|[^\w\s]|[\s]+")
         st.session_state.explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
 
 explainer = st.session_state.explainer
