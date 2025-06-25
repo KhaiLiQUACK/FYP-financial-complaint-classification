@@ -105,8 +105,7 @@ def remove_stopwords(tokens):
             and (not re.fullmatch(r'[a-zA-Z]{1,2}', word) or len(set(word)) > 1)]
 
 def remove_non_english_words(tokens):
-    # return [word for word in tokens if word.lower() in english_vocab]
-    return [word for word in tokens if wordnet.synsets(word.lower())]
+    return [word for word in tokens if word.lower() in english_vocab]
 
 def clean_text(text):
     # 1. Remove multiple XXXX symbols (anonymized information) + Clean extra whitespace
