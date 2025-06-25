@@ -105,7 +105,8 @@ def remove_stopwords(tokens):
             and (not re.fullmatch(r'[a-zA-Z]{1,2}', word) or len(set(word)) > 1)]
 
 def remove_non_english_words(tokens):
-    return [word for word in tokens if word.lower() in english_vocab]
+    # return [word for word in tokens if word.lower() in english_vocab]
+    return [word for word in tokens if wordnet.synsets(word.lower())]
 
 def clean_text(text):
     # 1. Remove multiple XXXX symbols (anonymized information) + Clean extra whitespace
@@ -135,9 +136,6 @@ def clean_text(text):
     text = ' '.join([replacer.replace(word) for word in text.split()])
     # Remove redundant words
     text = re.sub(r'\b(\w+)( \1)+\b', r'\1', text)
-
-    if text and not re.search(r'[.!?]$', text):
-        text += '.'
 
     # 3. Tokenize using NLTK
     pattern = r"[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*|[.,!?;'\-\"()[]]"
@@ -177,11 +175,21 @@ class CNNBiLSTMWrapper:
         self.tokenizer = tokenizer
         self.maxlen = maxlen
 
+    # def __call__(self, texts):
+    #     cleaned_texts = [clean_text(t) for t in texts]
+    #     sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
+    #     padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
+    #     return self.model.predict(padded)
+
     def __call__(self, texts):
-        cleaned_texts = [clean_text(t) for t in texts]
-        sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
-        padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
-        return self.model.predict(padded)
+        # SHAP passes original raw text here
+        sequences = []
+        for text in texts:
+            cleaned = clean_text(text)  # only use cleaned text for model
+            seq = self.tokenizer.texts_to_sequences([cleaned])
+            padded = pad_sequences(seq, maxlen=self.maxlen, padding='post')
+            sequences.append(padded[0])
+        return self.model.predict(np.array(sequences))
 
 # Create & Cache SHAP explainer (avoid repeated load)
 if "explainer" not in st.session_state:
@@ -217,6 +225,7 @@ def visualize_token_contributions(shap_values, predicted_class):
         html += f'<span style="background-color:{color}; padding:3px; margin:1px; border-radius:5px;">{word}</span> '
 
     return html
+
 
 # def explain_shap(raw_text, predicted_class):
 #     # Get SHAP values for the input
