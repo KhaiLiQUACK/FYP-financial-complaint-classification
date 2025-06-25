@@ -319,6 +319,9 @@ if "label" in st.session_state:
         # ax_prob.set_title("Class Probabilities")
         # st.pyplot(fig_prob)
 
+        fig, ax = plt.subplots(figsize=(8, 5))
+        bars = ax.barh(prob_df["Category"], prob_df["Probability"], color=plt.cm.Blues(prob_df["Probability"]))
+
         # Add labels on bars
         for bar in bars:
             width = bar.get_width()
