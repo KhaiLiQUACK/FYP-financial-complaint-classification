@@ -197,14 +197,11 @@ class CNNBiLSTMWrapper:
 
 # Create & Cache SHAP explainer (avoid repeated load)
 if "explainer" not in st.session_state:
-    # with st.spinner("Loading SHAP explainer..."):
-    #     wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
-    #     regex_masker = shap.maskers.Text(r"\w+")
-    #     st.session_state.explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
     with st.spinner("Loading SHAP explainer..."):
         wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
-        spacy_masker = shap.maskers.Text(tokenizer="spacy")
-        st.session_state.explainer = shap.Explainer(wrapped_model, masker=spacy_masker, output_names=label_encoder.classes_)
+        # regex_masker = shap.maskers.Text(r"\w+")
+        regex_masker = shap.maskers.Text(tokenizer="simple")
+        st.session_state.explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
 
 explainer = st.session_state.explainer
 
