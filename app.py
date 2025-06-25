@@ -36,11 +36,22 @@ except LookupError:
     nltk.download('averaged_perceptron_tagger_eng')
 
 # Load best_model, label encoder & tokenizer
-model = load_model("CNN_BiLSTM_Seq.keras")
-with open('label_encoder.pkl', 'rb') as f:
-    label_encoder = pickle.load(f)
-with open("tokenizer.pkl", "rb") as f:
-    tokenizer = pickle.load(f)
+@st.cache_resource
+def load_cnn_bilstm_model():
+    return load_model("CNN_BiLSTM_Seq.keras")
+model = load_cnn_bilstm_model()
+
+@st.cache_resource
+def load_tokenizer():
+    with open("tokenizer.pkl", "rb") as f:
+        return pickle.load(f)
+tokenizer = load_tokenizer()
+
+@st.cache_resource
+def load_label_encoder():
+    with open("label_encoder.pkl", "rb") as f:
+        return pickle.load(f)
+label_encoder = load_label_encoder()
 
 # Define function to recreate text cleaning pipeline in EDA
 stop_words = set(stopwords.words('english'))
@@ -168,9 +179,17 @@ class CNNBiLSTMWrapper:
         return self.model.predict(padded)
 
 # Create SHAP explainer
-wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
-regex_masker = shap.maskers.Text(r"\w+")
-explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
+@st.cache_resource
+def get_shap_explainer(model, tokenizer):
+    wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
+    masker = shap.maskers.Text(r"\w+")
+    return shap.Explainer(wrapped_model, masker=masker, output_names=label_encoder.classes_)
+explainer = get_shap_explainer(model, tokenizer)
+
+# # Create SHAP explainer
+# wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
+# regex_masker = shap.maskers.Text(r"\w+")
+# explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
 
 def visualize_token_contributions(shap_values, predicted_class):
     values = shap_values[0].values[:, predicted_class]
@@ -297,17 +316,25 @@ if "shap_values" in st.session_state:
         feature_names=shap_obj.feature_names
     )
 
+    # Token-level SHAP Contribution Highlight
+    st.markdown("### 🔠 Token-level SHAP Contribution Highlight")
+    html_output = visualize_token_contributions(st.session_state["shap_values"], selected_class_idx)
+    st.markdown(html_output, unsafe_allow_html=True)
+
+    # Help section
+    with st.expander("ℹ️ How to interpret token-level SHAP plot"):
+        st.markdown("""
+        - **Base value** is the average model output.
+        - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
+        - The plot explains why the model predicted the selected class.
+        """)
+
     # SHAP Plot
     st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
     fig, ax = plt.subplots(figsize=(10, 4))
     shap.plots.waterfall(explanation, max_display=len(values), show=False)
     st.pyplot(fig)
 
-    # Token-level SHAP Contribution Highlight
-    st.markdown("### 🔠 Token-level SHAP Contribution Highlight")
-    html_output = visualize_token_contributions(st.session_state["shap_values"], selected_class_idx)
-    st.markdown(html_output, unsafe_allow_html=True)
-    
     # Help section
     with st.expander("ℹ️ How to interpret this plot"):
         st.markdown("""
