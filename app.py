@@ -20,6 +20,14 @@ from nltk import pos_tag
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import load_model
 
+# --- Load spaCy model for SHAP tokenizer ---
+import spacy
+try:
+    _ = spacy.load("en_core_web_sm")
+except OSError:
+    import subprocess
+    subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
+
 # Download NLTK corpora
 corpora_packages = ["stopwords", "words", "wordnet", "omw-1.4"]
 for pkg in corpora_packages:
@@ -174,28 +182,32 @@ class CNNBiLSTMWrapper:
         self.tokenizer = tokenizer
         self.maxlen = maxlen
 
-    # def __call__(self, texts):
-    #     cleaned_texts = [clean_text(t) for t in texts]
-    #     sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
-    #     padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
-    #     return self.model.predict(padded)
-
     def __call__(self, texts):
-        # SHAP passes original raw text here
-        sequences = []
-        for text in texts:
-            cleaned = clean_text(text)  # only use cleaned text for model
-            seq = self.tokenizer.texts_to_sequences([cleaned])
-            padded = pad_sequences(seq, maxlen=self.maxlen, padding='post')
-            sequences.append(padded[0])
-        return self.model.predict(np.array(sequences))
+        cleaned_texts = [clean_text(t) for t in texts]
+        sequences = self.tokenizer.texts_to_sequences(cleaned_texts)
+        padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
+        return self.model.predict(padded)
+
+    # def __call__(self, texts):
+    #     # SHAP passes original raw text here
+    #     sequences = []
+    #     for text in texts:
+    #         cleaned = clean_text(text)  # only use cleaned text for model
+    #         seq = self.tokenizer.texts_to_sequences([cleaned])
+    #         padded = pad_sequences(seq, maxlen=self.maxlen, padding='post')
+    #         sequences.append(padded[0])
+    #     return self.model.predict(np.array(sequences))
 
 # Create & Cache SHAP explainer (avoid repeated load)
 if "explainer" not in st.session_state:
+    # with st.spinner("Loading SHAP explainer..."):
+    #     wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
+    #     regex_masker = shap.maskers.Text(r"\w+")
+    #     st.session_state.explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
     with st.spinner("Loading SHAP explainer..."):
         wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
-        regex_masker = shap.maskers.Text(r"\w+")
-        st.session_state.explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
+        spacy_masker = shap.maskers.Text(tokenizer="spacy")
+        st.session_state.explainer = shap.Explainer(wrapped_model, masker=spacy_masker, output_names=label_encoder.classes_)
 
 explainer = st.session_state.explainer
 
@@ -359,8 +371,8 @@ if "shap_values" in st.session_state:
         - The plot explains why the model predicted the selected class.
         """)
 
-else:
-    st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
+# else:
+#     st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
 
 
 
