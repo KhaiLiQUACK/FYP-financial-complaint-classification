@@ -10,6 +10,8 @@ import pickle
 import ast
 import os
 import matplotlib.pyplot as plt
+import spacy
+import subprocess
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -21,12 +23,11 @@ from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import load_model
 
 # --- Load spaCy model for SHAP tokenizer ---
-import spacy
 try:
-    _ = spacy.load("en_core_web_sm")
-except OSError:
-    import subprocess
+    nlp = spacy.load("en_core_web_sm")
+except:
     subprocess.run(["python", "-m", "spacy", "download", "en_core_web_sm"])
+    nlp = spacy.load("en_core_web_sm")
 
 # Download NLTK corpora
 corpora_packages = ["stopwords", "words", "wordnet", "omw-1.4"]
