@@ -149,7 +149,13 @@ def clean_text(text):
     # 6. Filter out non-English words
     tokens = remove_non_english_words(tokens)
 
-    return ' '.join(tokens)
+    text = ' '.join(tokens)
+
+    # Ensure SHAP captures last token
+    if text and text[-1].isalnum():
+        text += " "
+
+    return text
 
 # Define predict function for best model
 def predict_cnn_bilstm(raw_text, model, tokenizer, label_encoder, maxlen=100):
@@ -194,8 +200,7 @@ class CNNBiLSTMWrapper:
 if "explainer" not in st.session_state:
     with st.spinner("Loading SHAP explainer..."):
         wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
-        # regex_masker = shap.maskers.Text(r"\w+")
-        regex_masker = shap.maskers.Text(tokenizer="simple")
+        regex_masker = shap.maskers.Text(r"\w+")
         st.session_state.explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
 
 explainer = st.session_state.explainer
