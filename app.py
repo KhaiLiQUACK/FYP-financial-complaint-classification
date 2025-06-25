@@ -181,36 +181,11 @@ class CNNBiLSTMWrapper:
         padded = pad_sequences(sequences, maxlen=self.maxlen, padding='post')
         return self.model.predict(padded)
 
-    # def __call__(self, texts):
-    #     sequences = []
-    #     for text in texts:
-    #         # Ensure final token is preserved
-    #         if text and text[-1] not in string.whitespace + string.punctuation:
-    #             text += ' '
-    
-    #         cleaned = clean_text(text)
-    #         seq = self.tokenizer.texts_to_sequences([cleaned])
-    #         padded = pad_sequences(seq, maxlen=self.maxlen, padding='post')
-    #         sequences.append(padded[0])
-    #     return self.model.predict(np.array(sequences))
-
-    # def __call__(self, texts):
-    #     # SHAP passes original raw text here
-    #     sequences = []
-    #     for text in texts:
-    #         cleaned = clean_text(text)  # only use cleaned text for model
-    #         seq = self.tokenizer.texts_to_sequences([cleaned])
-    #         padded = pad_sequences(seq, maxlen=self.maxlen, padding='post')
-    #         sequences.append(padded[0])
-    #     return self.model.predict(np.array(sequences))
-
 # Create & Cache SHAP explainer (avoid repeated load)
 if "explainer" not in st.session_state:
     with st.spinner("Loading SHAP explainer..."):
         wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
-        # regex_masker = shap.maskers.Text(r"\w+")
-        # regex_masker = shap.maskers.Text(r"\w+|[^\w\s]")
-        regex_masker = shap.maskers.Text(r"\w+|[^\w\s]|[\s]+")
+        regex_masker = shap.maskers.Text(r"\w+")
         st.session_state.explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
 
 explainer = st.session_state.explainer
@@ -324,6 +299,19 @@ if "label" in st.session_state:
     st.markdown(f"**Predicted Category:** `{st.session_state['label']}`")
     st.markdown(f"**Confidence:** `{st.session_state['confidence']}%`")
 
+    # Class Probability Plot
+    st.subheader("\U0001F4CA Class Probabilities:")
+    prob_df = pd.DataFrame({
+        "Category": label_encoder.classes_,
+        "Probability": st.session_state["shap_values"].data[0].tolist() if "shap_values" in st.session_state else st.session_state["pred_probs"][0].tolist()
+    })
+    fig_prob, ax_prob = plt.subplots()
+    prob_df = prob_df.sort_values("Probability", ascending=True)
+    ax_prob.barh(prob_df["Category"], prob_df["Probability"], color="skyblue")
+    ax_prob.set_xlabel("Probability")
+    ax_prob.set_title("Class Probabilities")
+    st.pyplot(fig_prob)
+
 if "label" in st.session_state and st.button("📈 Show SHAP Explanation"):
     shap_values = explainer([st.session_state["input_text"]])
     st.session_state["shap_values"] = shap_values
@@ -363,6 +351,7 @@ if "shap_values" in st.session_state:
 
     # SHAP Waterfall Word Importance Plot
     st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
+    top_n = st.slider("Select number of top features to show in waterfall plot:", min_value=5, max_value=len(values), value=10)
     fig, ax = plt.subplots(figsize=(10, 4))
     shap.plots.waterfall(explanation, max_display=len(values), show=False)
     st.pyplot(fig)
