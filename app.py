@@ -216,10 +216,10 @@ def explain_shap(raw_text, predicted_class):
         feature_names=shap_values[0].feature_names
     )
 
-    # Token-level heatmap (LIME-style)
-    st.markdown("### 🔠 Token-level SHAP Contribution Highlight")
-    html_output = visualize_token_contributions(shap_values, selected_class_idx)
-    st.markdown(html_output, unsafe_allow_html=True)
+    # # Token-level heatmap (LIME-style)
+    # st.markdown("### 🔠 Token-level SHAP Contribution Highlight")
+    # html_output = visualize_token_contributions(shap_values, selected_class_idx)
+    # st.markdown(html_output, unsafe_allow_html=True)
 
     # Waterfall Plot for Word Importance
     st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
