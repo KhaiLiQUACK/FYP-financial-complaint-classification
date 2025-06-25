@@ -327,12 +327,12 @@ if "label" in st.session_state:
         for bar in bars:
             width = bar.get_width()
             ax.text(width + 0.01, bar.get_y() + bar.get_height()/2,
-                    f"{width:.2f}", va='center', fontsize=9)
+                    f"{width:.2f}", va='center', fontsize=12)
         
         # Style the plot to look like SHAP
         ax.set_xlim(0, 1.0)
         ax.set_xlabel("Probability")
-        ax.set_title("Class Probabilities", fontsize=12)
+        ax.set_title("Class Probabilities", fontsize=16)
         ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0))
         ax.grid(axis='x', linestyle='--', alpha=0.4)
         ax.spines['top'].set_visible(False)
@@ -410,7 +410,7 @@ if "shap_values" in st.session_state:
 
     # SHAP Waterfall Word Importance Plot
     st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
-    top_n = st.slider("Select number of top features to show in waterfall plot:", min_value=5, max_value=len(values), value=5)
+    top_n = st.slider("Select number of top features to show in waterfall plot:", min_value=5, max_value=len(values), value=10)
     fig, ax = plt.subplots(figsize=(10, 4))
     shap.plots.waterfall(explanation, max_display=top_n, show=False)
     st.pyplot(fig)
