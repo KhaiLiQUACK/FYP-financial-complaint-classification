@@ -310,8 +310,8 @@ if "label" in st.session_state:
     if len(class_names) == len(probs):
         prob_df = pd.DataFrame({
             "Category": class_names,
-            # "Probability": probs
-            "Probability": (np.array(probs) * 100).tolist()
+            "Probability": probs
+            # "Probability": (np.array(probs) * 100).tolist()
         })
         prob_df = prob_df.sort_values("Probability", ascending=True)
         
@@ -328,7 +328,7 @@ if "label" in st.session_state:
         for bar in bars:
             width = bar.get_width()
             ax.text(width + 0.01, bar.get_y() + bar.get_height()/2,
-                    f"{width:.2f}%", va='center', fontsize=12)
+                    f"{width:.2f}", va='center', fontsize=12)
         
         # Style the plot to look like SHAP
         ax.set_xlim(0, 1.0)
