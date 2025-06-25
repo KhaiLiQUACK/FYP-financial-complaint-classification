@@ -36,21 +36,23 @@ except LookupError:
     nltk.download('averaged_perceptron_tagger_eng')
 
 # Load best_model, label encoder & tokenizer
+# Caching model and utilities
 @st.cache_resource
-def load_cnn_bilstm_model():
+def load_model_cached():
     return load_model("CNN_BiLSTM_Seq.keras")
-model = load_cnn_bilstm_model()
 
 @st.cache_resource
 def load_tokenizer():
     with open("tokenizer.pkl", "rb") as f:
         return pickle.load(f)
-tokenizer = load_tokenizer()
 
 @st.cache_resource
 def load_label_encoder():
     with open("label_encoder.pkl", "rb") as f:
         return pickle.load(f)
+
+model = load_model_cached()
+tokenizer = load_tokenizer()
 label_encoder = load_label_encoder()
 
 # Define function to recreate text cleaning pipeline in EDA
@@ -179,12 +181,14 @@ class CNNBiLSTMWrapper:
         return self.model.predict(padded)
 
 # Create SHAP explainer
-@st.cache_resource
-def get_shap_explainer(model, tokenizer):
-    wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
-    masker = shap.maskers.Text(r"\w+")
-    return shap.Explainer(wrapped_model, masker=masker, output_names=label_encoder.classes_)
-explainer = get_shap_explainer(model, tokenizer)
+# Lazy SHAP initialization (avoid repeated load)
+if "explainer" not in st.session_state:
+    with st.spinner("Loading SHAP explainer..."):
+        wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
+        regex_masker = shap.maskers.Text(r"\w+")
+        st.session_state.explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
+
+explainer = st.session_state.explainer
 
 # # Create SHAP explainer
 # wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
@@ -202,14 +206,12 @@ def visualize_token_contributions(shap_values, predicted_class):
             opacity = abs(val / max_val)
         else:
             opacity = 0
-
         if val > 0:
             color = f"rgba(255, 0, 0, {opacity:.2f})"  # Red for positive
         elif val < 0:
             color = f"rgba(0, 0, 255, {opacity:.2f})"  # Blue for negative
         else:
             color = "rgba(255, 255, 255, 0.0)"         # Transparent for 0
-
         html += f'<span style="background-color:{color}; padding:3px; margin:1px; border-radius:5px;">{word}</span> '
 
     return html
@@ -289,8 +291,6 @@ if st.button("Classify & Explain") and input_text.strip():
     st.session_state["predicted_class"] = predicted_class
     st.session_state["shap_values"] = explainer([input_text])
 
-# If prediction already exists (cached)
-if "shap_values" in st.session_state:
     st.subheader("📌 Cleaned Input:")
     st.code(st.session_state["cleaned"])
 
@@ -298,6 +298,8 @@ if "shap_values" in st.session_state:
     st.markdown(f"**Predicted Category:** `{st.session_state['label']}`")
     st.markdown(f"**Confidence:** `{st.session_state['confidence']}%`")
 
+# If prediction already exists (cached)
+if "shap_values" in st.session_state:
     # Dropdown for SHAP class selection
     class_names = label_encoder.classes_
     selected_class_name = st.selectbox("Select class to explain:", class_names, index=st.session_state["predicted_class"])
@@ -324,12 +326,11 @@ if "shap_values" in st.session_state:
     # Help section
     with st.expander("ℹ️ How to interpret token-level SHAP plot"):
         st.markdown("""
-        - **Base value** is the average model output.
-        - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
-        - The plot explains why the model predicted the selected class.
+        - **Red = push prediction higher** toward the class.
+        - **Blue = push prediction away** from the class.
         """)
 
-    # SHAP Plot
+    # SHAP Waterfall Word Importance Plot
     st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
     fig, ax = plt.subplots(figsize=(10, 4))
     shap.plots.waterfall(explanation, max_display=len(values), show=False)
