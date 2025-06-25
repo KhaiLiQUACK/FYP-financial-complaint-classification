@@ -300,54 +300,72 @@ if "label" in st.session_state:
     st.markdown(f"**Predicted Category:** `{st.session_state['label']}`")
     st.markdown(f"**Confidence:** `{st.session_state['confidence']}%`")
 
-    # # Class Probability Plot
-    # st.subheader("📊 Class Probabilities:")
-    # probs = st.session_state["pred_probs"][0]  
-    # class_names = label_encoder.classes_
-    
-    # # Create DataFrame only if lengths match
-    # if len(class_names) == len(probs):
-    #     prob_df = pd.DataFrame({
-    #         "Category": class_names,
-    #         "Probability": probs
-    #     })
-    #     prob_df = prob_df.sort_values("Probability", ascending=True)
-        
-    #     fig_prob, ax_prob = plt.subplots()
-    #     ax_prob.barh(prob_df["Category"], prob_df["Probability"], color="skyblue")
-    #     ax_prob.set_xlabel("Probability")
-    #     ax_prob.set_title("Class Probabilities")
-    #     st.pyplot(fig_prob)
-    # else:
-    #     st.warning("Mismatch between class labels and predicted probabilities.")
-
+    # Class Probability Plot
     st.subheader("📊 Class Probabilities:")
-    probabilities = st.session_state["shap_values"].base_values if "shap_values" in st.session_state else st.session_state["pred_probs"][0]
-    prob_df = pd.DataFrame({
-        "Category": label_encoder.classes_,
-        "Probability": probabilities.tolist()
-    }).sort_values("Probability", ascending=True)
+    probs = st.session_state["pred_probs"][0]  
+    class_names = label_encoder.classes_
     
-    fig, ax = plt.subplots(figsize=(8, 5))
-    bars = ax.barh(prob_df["Category"], prob_df["Probability"], color=plt.cm.Blues(prob_df["Probability"]))
+    # Create DataFrame only if lengths match
+    if len(class_names) == len(probs):
+        prob_df = pd.DataFrame({
+            "Category": class_names,
+            "Probability": probs
+        })
+        prob_df = prob_df.sort_values("Probability", ascending=True)
+        
+        # fig_prob, ax_prob = plt.subplots()
+        # ax_prob.barh(prob_df["Category"], prob_df["Probability"], color="skyblue")
+        # ax_prob.set_xlabel("Probability")
+        # ax_prob.set_title("Class Probabilities")
+        # st.pyplot(fig_prob)
+
+        # Add labels on bars
+        for bar in bars:
+            width = bar.get_width()
+            ax.text(width + 0.01, bar.get_y() + bar.get_height()/2,
+                    f"{width:.2f}", va='center', fontsize=9)
+        
+        # Style the plot to look like SHAP
+        ax.set_xlim(0, 1.0)
+        ax.set_xlabel("Probability")
+        ax.set_title("Class Probabilities", fontsize=12)
+        ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+        ax.grid(axis='x', linestyle='--', alpha=0.4)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        
+        st.pyplot(fig)
+    else:
+        st.warning("Mismatch between class labels and predicted probabilities.")
+
+    # st.subheader("📊 Class Probabilities:")
+    # probabilities = st.session_state["shap_values"].base_values if "shap_values" in st.session_state else st.session_state["pred_probs"][0]
+    # prob_df = pd.DataFrame({
+    #     "Category": label_encoder.classes_,
+    #     "Probability": probabilities.tolist()
+    # }).sort_values("Probability", ascending=True)
     
-    # Add labels on bars
-    for bar in bars:
-        width = bar.get_width()
-        ax.text(width + 0.01, bar.get_y() + bar.get_height()/2,
-                f"{width:.2f}", va='center', fontsize=9)
+    # fig, ax = plt.subplots(figsize=(8, 5))
+    # bars = ax.barh(prob_df["Category"], prob_df["Probability"], color=plt.cm.Blues(prob_df["Probability"]))
     
-    # Style the plot to look like SHAP
-    ax.set_xlim(0, 1.0)
-    ax.set_xlabel("Probability")
-    ax.set_title("Class Probabilities", fontsize=12)
-    ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0))
-    ax.grid(axis='x', linestyle='--', alpha=0.4)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
-    ax.spines['left'].set_visible(False)
+    # # Add labels on bars
+    # for bar in bars:
+    #     width = bar.get_width()
+    #     ax.text(width + 0.01, bar.get_y() + bar.get_height()/2,
+    #             f"{width:.2f}", va='center', fontsize=9)
     
-    st.pyplot(fig)
+    # # Style the plot to look like SHAP
+    # ax.set_xlim(0, 1.0)
+    # ax.set_xlabel("Probability")
+    # ax.set_title("Class Probabilities", fontsize=12)
+    # ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0))
+    # ax.grid(axis='x', linestyle='--', alpha=0.4)
+    # ax.spines['top'].set_visible(False)
+    # ax.spines['right'].set_visible(False)
+    # ax.spines['left'].set_visible(False)
+    
+    # st.pyplot(fig)
 
 if "label" in st.session_state and st.button("📈 Show SHAP Explanation"):
     shap_values = explainer([st.session_state["input_text"]])
