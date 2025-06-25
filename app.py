@@ -195,37 +195,37 @@ def visualize_token_contributions(shap_values, predicted_class):
 
     return html
 
-def explain_shap(raw_text, predicted_class):
-    # Get SHAP values for the input
-    shap_values = explainer([raw_text])
+# def explain_shap(raw_text, predicted_class):
+#     # Get SHAP values for the input
+#     shap_values = explainer([raw_text])
 
-    # Select class to explain
-    class_names = label_encoder.classes_
-    selected_class_name = st.selectbox("Select class to explain:", class_names, index=predicted_class)
-    selected_class_idx = list(class_names).index(selected_class_name)
+#     # Select class to explain
+#     class_names = label_encoder.classes_
+#     selected_class_name = st.selectbox("Select class to explain:", class_names, index=predicted_class)
+#     selected_class_idx = list(class_names).index(selected_class_name)
 
-    # Extract explanation for selected class
-    values = shap_values[0].values[:, selected_class_idx]
-    base_value = shap_values[0].base_values[selected_class_idx]
-    data = shap_values[0].data
+#     # Extract explanation for selected class
+#     values = shap_values[0].values[:, selected_class_idx]
+#     base_value = shap_values[0].base_values[selected_class_idx]
+#     data = shap_values[0].data
 
-    explanation = shap.Explanation(
-        values=values,
-        base_values=base_value,
-        data=data,
-        feature_names=shap_values[0].feature_names
-    )
+#     explanation = shap.Explanation(
+#         values=values,
+#         base_values=base_value,
+#         data=data,
+#         feature_names=shap_values[0].feature_names
+#     )
 
-    # # Token-level heatmap (LIME-style)
-    # st.markdown("### 🔠 Token-level SHAP Contribution Highlight")
-    # html_output = visualize_token_contributions(shap_values, selected_class_idx)
-    # st.markdown(html_output, unsafe_allow_html=True)
+#     # Token-level heatmap (LIME-style)
+#     st.markdown("### 🔠 Token-level SHAP Contribution Highlight")
+#     html_output = visualize_token_contributions(shap_values, selected_class_idx)
+#     st.markdown(html_output, unsafe_allow_html=True)
 
-    # Waterfall Plot for Word Importance
-    st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
-    fig, ax = plt.subplots(figsize=(10, 4))
-    shap.plots.waterfall(explanation, max_display=len(values), show=False)
-    st.pyplot(fig)
+#     # Waterfall Plot for Word Importance
+#     st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
+#     fig, ax = plt.subplots(figsize=(10, 4))
+#     shap.plots.waterfall(explanation, max_display=len(values), show=False)
+#     st.pyplot(fig)
 
 
 # --- Streamlit App ---
@@ -303,6 +303,11 @@ if "shap_values" in st.session_state:
     shap.plots.waterfall(explanation, max_display=len(values), show=False)
     st.pyplot(fig)
 
+    # Token-level SHAP Contribution Highlight
+    st.markdown("### 🔠 Token-level SHAP Contribution Highlight")
+    html_output = visualize_token_contributions(st.session_state["shap_values"], selected_class_idx)
+    st.markdown(html_output, unsafe_allow_html=True)
+    
     # Help section
     with st.expander("ℹ️ How to interpret this plot"):
         st.markdown("""
