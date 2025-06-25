@@ -136,8 +136,8 @@ def clean_text(text):
     # Remove redundant words
     text = re.sub(r'\b(\w+)( \1)+\b', r'\1', text)
 
-    if text and text[-1].isalnum():
-        text += "."
+    if text and not re.search(r'[.!?]$', text):
+        text += '.'
 
     # 3. Tokenize using NLTK
     pattern = r"[a-zA-Z0-9]+(?:-[a-zA-Z0-9]+)*|[.,!?;'\-\"()[]]"
@@ -291,7 +291,6 @@ if st.button("Classify & Explain") and input_text.strip():
     st.session_state["label"] = label
     st.session_state["confidence"] = confidence
     st.session_state["predicted_class"] = predicted_class
-    st.session_state["shap_values"] = explainer([input_text])
 
 if "label" in st.session_state:
     st.subheader("📌 Cleaned Input:")
@@ -301,8 +300,13 @@ if "label" in st.session_state:
     st.markdown(f"**Predicted Category:** `{st.session_state['label']}`")
     st.markdown(f"**Confidence:** `{st.session_state['confidence']}%`")
 
+if "label" in st.session_state and st.button("📈 Show SHAP Explanation"):
+    shap_values = explainer([st.session_state["input_text"]])
+    st.session_state["shap_values"] = shap_values
+
 # If prediction already exists (cached)
 if "shap_values" in st.session_state:
+    shap_obj = st.session_state["shap_values"][0]
     # Dropdown for SHAP class selection
     class_names = label_encoder.classes_
     selected_class_name = st.selectbox("Select class to explain:", class_names, index=st.session_state["predicted_class"])
