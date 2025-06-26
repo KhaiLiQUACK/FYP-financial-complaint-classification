@@ -191,10 +191,6 @@ if "explainer" not in st.session_state:
 
 explainer = st.session_state.explainer
 
-# # Create SHAP explainer
-# wrapped_model = CNNBiLSTMWrapper(model, tokenizer)
-# regex_masker = shap.maskers.Text(r"\w+")
-# explainer = shap.Explainer(wrapped_model, masker=regex_masker, output_names=label_encoder.classes_)
 
 def visualize_token_contributions(shap_values, predicted_class):
     values = shap_values[0].values[:, predicted_class]
@@ -217,66 +213,12 @@ def visualize_token_contributions(shap_values, predicted_class):
 
     return html
 
-
-# def explain_shap(raw_text, predicted_class):
-#     # Get SHAP values for the input
-#     shap_values = explainer([raw_text])
-
-#     # Select class to explain
-#     class_names = label_encoder.classes_
-#     selected_class_name = st.selectbox("Select class to explain:", class_names, index=predicted_class)
-#     selected_class_idx = list(class_names).index(selected_class_name)
-
-#     # Extract explanation for selected class
-#     values = shap_values[0].values[:, selected_class_idx]
-#     base_value = shap_values[0].base_values[selected_class_idx]
-#     data = shap_values[0].data
-
-#     explanation = shap.Explanation(
-#         values=values,
-#         base_values=base_value,
-#         data=data,
-#         feature_names=shap_values[0].feature_names
-#     )
-
-#     # Token-level heatmap (LIME-style)
-#     st.markdown("### 🔠 Token-level SHAP Contribution Highlight")
-#     html_output = visualize_token_contributions(shap_values, selected_class_idx)
-#     st.markdown(html_output, unsafe_allow_html=True)
-
-#     # Waterfall Plot for Word Importance
-#     st.markdown(f"### 🔍 SHAP Waterfall Plot for Class: **{selected_class_name}**")
-#     fig, ax = plt.subplots(figsize=(10, 4))
-#     shap.plots.waterfall(explanation, max_display=len(values), show=False)
-#     st.pyplot(fig)
-
-
 # --- Streamlit App ---
 st.set_page_config(page_title="Complaint Classifier", layout="centered")
 st.title("📨 Financial Complaint Issue Classifier")
 st.markdown("""Enter your complaint below to predict its category and explain why the model made the prediction using SHAP.""")
 
 input_text = st.text_area("Enter Complaint Text:", height=200)
-
-# if st.button("Classify & Explain") and input_text.strip():
-#     cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
-#         input_text, model, tokenizer, label_encoder
-#     )
-#     st.subheader("📌 Cleaned Input:")
-#     st.code(cleaned)
-
-#     st.subheader("📊 Prediction Result:")
-#     st.markdown(f"**Predicted Category:** `{label}`")
-#     st.markdown(f"**Confidence:** `{confidence}%`")
-
-#     st.markdown(f"### 🔍 SHAP Word Importance Explanation for Predicted Class: **{label}**")
-#     explain_shap(input_text, predicted_class)
-#     with st.expander("ℹ️ How to interpret this plot"):
-#         st.markdown("""
-#         - **Base value** is the average model output.
-#         - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
-#         - The plot explains why the model predicted the selected class.
-#         """)
 
 # Button to classify and explain
 if st.button("Classify & Explain") and input_text.strip():
@@ -314,13 +256,6 @@ if "label" in st.session_state:
             # "Probability": (np.array(probs) * 100).tolist()
         })
         prob_df = prob_df.sort_values("Probability", ascending=True)
-        
-        # fig_prob, ax_prob = plt.subplots()
-        # ax_prob.barh(prob_df["Category"], prob_df["Probability"], color="skyblue")
-        # ax_prob.set_xlabel("Probability")
-        # ax_prob.set_title("Class Probabilities")
-        # st.pyplot(fig_prob)
-
         fig, ax = plt.subplots(figsize=(8, 5))
         bars = ax.barh(prob_df["Category"], prob_df["Probability"], color=plt.cm.Blues(prob_df["Probability"]))
 
@@ -425,9 +360,6 @@ if "shap_values" in st.session_state:
         - **Red bars** push prediction **higher**, **blue bars** pull it **lower**.
         - The plot explains why the model predicted the selected class.
         """)
-
-# else:
-#     st.markdown("\n🚀 Enter a complaint and click the button to see predictions.")
 
 
 
