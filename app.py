@@ -223,9 +223,10 @@ input_text = st.text_area("Enter Complaint Text:", height=200)
 # Button to classify and explain
 if st.button("Classify & Explain") and input_text.strip():
     # Predict
-    cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
-        input_text, model, tokenizer, label_encoder
-    )
+    with st.spinner("Classifying and computing prediction..."):
+        cleaned, label, confidence, pred_probs, predicted_class = predict_cnn_bilstm(
+            input_text, model, tokenizer, label_encoder
+        )
 
     # Cache all info in session_state to avoid recomputation
     st.session_state["input_text"] = input_text
@@ -233,7 +234,8 @@ if st.button("Classify & Explain") and input_text.strip():
     st.session_state["label"] = label
     st.session_state["confidence"] = confidence
     st.session_state["predicted_class"] = predicted_class
-    st.session_state["pred_probs"] = pred_probs 
+    st.session_state["pred_probs"] = pred_probs
+    st.success("✅ Prediction completed!")
 
 if "label" in st.session_state:
     st.subheader("📌 Cleaned Input:")
@@ -310,8 +312,10 @@ if "label" in st.session_state:
     # st.pyplot(fig)
 
 if "label" in st.session_state and st.button("📈 Show SHAP Explanation"):
-    shap_values = explainer([st.session_state["input_text"]])
+    with st.spinner("Generating SHAP explanation..."):
+        shap_values = explainer([st.session_state["input_text"]])
     st.session_state["shap_values"] = shap_values
+    st.success("✅ SHAP explanation ready!")
 
 # If prediction already exists (cached)
 if "shap_values" in st.session_state:
